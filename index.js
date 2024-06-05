@@ -23,14 +23,50 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+
+    const productDB = client.db("productDB");
+    const userDB = client.db("userDB");
+    const itemsCollection = productDB.collection("itemsCollection");
+    const userCollection = userDB.collection("userCollection");
+
+    // product
+    app.post("/items", async (req, res) => {
+      const itemsData = req.body;
+      const result = await itemsCollection.insertOne(itemsData);
+      res.send(result);
+    });
+    app.get("/items", async (req, res) => {
+      const itemsData = itemsCollection.find();
+      const result = await itemsData.toArray();
+      res.send(result);
+    });
+
+    app.get("/items/:id", async (req, res) => {
+      const id = req.params.id;
+      const itemsData = await itemsCollection.findOne({
+        _id: new ObjectId(id),
+      });
+      res.send(itemsData);
+    });
+
+    app.patch("/items/:id", async (req, res) => {
+      const id = req.params.id;
+      const updatedData = req.body;
+      const result = await itemsCollection.updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updatedData }
+      );
+      res.send(result);
+    });
+
+    // app.delete("/items/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   const result = await itemsCollection.deleteOne({ _id: new ObjectId(id) });
+    //   res.send(result);
+    // });
+
+    console.log("You successfully connected to MongoDB!");
   } finally {
-    // Ensures that the client will close when you finish/error
-    await client.close();
   }
 }
 run().catch(console.dir);
